@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  customer-api:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./customer-api:/app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - OTEL_SERVICE_NAME=customer-api
+    ports:
+      - "4006:4006"
+    depends_on:
+
+  observability-api:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./observability-api:/app
+    command: sh -c "npm install && npm run dev"
+    environment:
+    ports:
+      - "4007:4007"
+    depends_on:
+
+  ingest-engine:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./ingest-engine:/app
+    command: sh -c "npm install && npm run dev"
+    environment:
+    ports:
+      - "4008:4008"
+    depends_on:

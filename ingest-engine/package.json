@@ -1,0 +1,21 @@
+{
+  "name": "ingest-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/snappyjs": "^0.7.1"
+  },
+  "dependencies": {
+    "protobufjs": "^8.0.0",
+    "snappyjs": "^0.7.0"
+  }
+}
