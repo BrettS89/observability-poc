@@ -5,7 +5,7 @@ import {
   httpRequestDurationMs,
   httpInFlight,
   eventLoopLagMs,
-} from './golden-metrics';
+} from '../golden-metrics';
 
 function statusClass(code: number): '2xx' | '3xx' | '4xx' | '5xx' | 'other' {
   if (code >= 200 && code < 300) return '2xx';

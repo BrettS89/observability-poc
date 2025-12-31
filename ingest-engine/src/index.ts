@@ -39,17 +39,17 @@ type ParsedSample = {
 
 const CONFIG = {
   scrapeIntervalMs: 5000,
-  mimirRemoteWriteUrl: process.env.MIMIR_REMOTE_WRITE_URL ?? "http://localhost:9009/api/v1/push",
+  mimirRemoteWriteUrl: process.env.MIMIR_REMOTE_WRITE_URL ?? "http://mimir:9009/api/v1/push",
   // For real multi-tenancy, this should be derived from an API key lookup.
   tenantId: process.env.TENANT_ID ?? "demo-tenant",
   // Target to scrape
   targets: [
     {
-      name: "customer-app",
-      url: process.env.SCRAPE_URL ?? "http://localhost:9464/metrics",
+      name: "customer-api",
+      url: process.env.SCRAPE_URL ?? "http://customer-api:9464/metrics",
       // Optional static labels you want on every series from this target.
       staticLabels: {
-        job: "customer-app",
+        job: "customer-api",
         instance: "local",
       },
     },

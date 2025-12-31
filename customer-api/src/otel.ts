@@ -20,12 +20,12 @@ const prometheusExporter = new PrometheusExporter(
   }
 );
 
-const exporter = new OTLPTraceExporter({
-  url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
-});
+// const exporter = new OTLPTraceExporter({
+//   url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
+// });
 
 const sdk = new NodeSDK({
-  traceExporter: exporter,
+  // traceExporter: exporter,
   metricReader: prometheusExporter,
   instrumentations: [
     new HttpInstrumentation(),

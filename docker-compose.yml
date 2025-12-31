@@ -4,6 +4,7 @@ services:
   customer-api:
     image: node:20
     working_dir: /app
+    container_name: customer-api
     volumes:
       - ./customer-api:/app
     command: sh -c "npm install && npm run dev"
@@ -11,7 +12,7 @@ services:
       - OTEL_SERVICE_NAME=customer-api
     ports:
       - "4006:4006"
-    depends_on:
+      - "9464:9464"
 
   observability-api:
     image: node:20
@@ -19,10 +20,8 @@ services:
     volumes:
       - ./observability-api:/app
     command: sh -c "npm install && npm run dev"
-    environment:
     ports:
       - "4007:4007"
-    depends_on:
 
   ingest-engine:
     image: node:20
@@ -30,7 +29,55 @@ services:
     volumes:
       - ./ingest-engine:/app
     command: sh -c "npm install && npm run dev"
+    # environment:
+    # ports:
+    #   - "4008:4008"
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
     environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio12345
     ports:
-      - "4008:4008"
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO console UI
+    volumes:
+      - minio-data:/data
+
+  # Creates the buckets Mimir expects
+  minio-init:
+    image: minio/mc:latest
     depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO...' ;
+      until mc alias set local http://minio:9000 minio minio12345 2>/dev/null; do
+        sleep 1;
+      done;
+      echo 'MinIO is up. Creating buckets...' ;
+      mc mb -p local/mimir-blocks || true;
+      mc mb -p local/mimir-ruler || true;
+      mc mb -p local/mimir-alertmanager || true;
+      echo 'Buckets created.';
+      "
+
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    depends_on:
+      - minio
+      - minio-init
+    command:
+      - "-config.file=/etc/mimir/mimir.yaml"
+    ports:
+      - "9009:9009"   # Mimir HTTP API (remote_write, query, etc.)
+    volumes:
+      - ./mimir.yaml:/etc/mimir/mimir.yaml:ro
+      - mimir-data:/data
+
+volumes:
+  minio-data:
+  mimir-data:

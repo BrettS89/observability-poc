@@ -26,7 +26,7 @@ const CONFIG = {
   targets: [
     {
       name: "customer-app",
-      url: process.env.SCRAPE_URL ?? "http://localhost:9464/metrics",
+      url: process.env.SCRAPE_URL ?? "http://customer-api:9464/metrics",
       // Optional static labels you want on every series from this target.
       staticLabels: {
         job: "customer-app",
