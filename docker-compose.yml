@@ -8,8 +8,11 @@ services:
     volumes:
       - ./customer-api:/app
     command: sh -c "npm install && npm run dev"
+    depends_on:
+      - ingest-engine
     environment:
       - OTEL_SERVICE_NAME=customer-api
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://ingest-engine:4008
     ports:
       - "4006:4006"
       - "9464:9464"
@@ -26,12 +29,14 @@ services:
   ingest-engine:
     image: node:20
     working_dir: /app
+    container_name: ingest-engine
     volumes:
       - ./ingest-engine:/app
     command: sh -c "npm install && npm run dev"
-    # environment:
-    # ports:
-    #   - "4008:4008"
+    environment:
+      - PORT=4008
+    ports:
+      - "4008:4008"
 
   minio:
     image: minio/minio:latest
