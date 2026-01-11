@@ -1,3 +1,6 @@
+process.env.OTEL_SERVICE_NAME='customer-api';
+process.env.OTEL_RESOURCE_ATTRIBUTES='deployment.environment=prod,service.version=1.0.0';
+
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
@@ -18,8 +21,11 @@ function withJitter(baseMs: number, jitterRatio = 0.3) {
 
 const metricExporter = new OTLPMetricExporter({
   // Example: http://localhost:4318/v1/metrics
-  url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}/otlp/metrics`,
+  url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}/otlp/v1/metrics`,
   // headers: { Authorization: `Bearer ${process.env.INGEST_TOKEN}` }, // if needed
+  headers: {
+    'Content-Type': 'application/x-protobuf',
+  },
 });
 
 const metricReader = new PeriodicExportingMetricReader({

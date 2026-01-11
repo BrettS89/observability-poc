@@ -17,9 +17,14 @@
     "ts-node-dev": "^2.0.0"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.209.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.209.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.209.0",
     "axios": "^1.13.2",
     "axios-retry": "^4.5.0",
     "express": "^5.2.1",
+    "google-protobuf": "^4.0.1",
     "p-limit": "^7.2.0",
     "protobufjs": "^8.0.0",
     "snappyjs": "^0.7.0"

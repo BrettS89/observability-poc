@@ -3,7 +3,10 @@ import { metricsRouter } from './ingest/metrics';
 
 const app = express();
 
-app.use('/otlp', express.raw({ type: ['application/x-protobuf', 'application/octet-stream'], limit: '10mb' }));
+app.use(express.raw({
+  type: ['application/x-protobuf', 'application/octet-stream', 'application/json'],
+  limit: '10mb'
+}));
 
 app.use(metricsRouter);
 

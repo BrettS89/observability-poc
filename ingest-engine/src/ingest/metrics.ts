@@ -3,14 +3,14 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.post('/otlp/metrics', async (req, res) => {
+router.post('/otlp/v1/metrics', async (req, res) => {
   try {
     const tenant = 'test'; // get from headers and do auth
 
     if (!tenant) return res.status(401).send('unauthorized');
 
     const upstreamHeaders: Record<string, string> = {
-      'content-type': 'application/x-protobuf',
+      'content-type': req.header('content-type') ?? 'application/json',
       ...(req.header('content-encoding') ? { 'content-encoding': req.header('content-encoding')! } : {}),
       'X-Scope-OrgID': tenant,
     };
@@ -34,6 +34,7 @@ router.post('/otlp/metrics', async (req, res) => {
     const text = await resp.data;
     res.status(resp.status).send(text);
   } catch (err: any) {
+    console.log(err);
     res.status(502).send(`upstream error: ${err?.message ?? String(err)}`);
   }
 });
