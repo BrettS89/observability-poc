@@ -46,3 +46,57 @@ export const formatLatency = (data: any) => {
     }),
   };
 };
+
+export const formatInFlight = (data: any) => {
+  const series = data?.data?.result?.[0];
+
+  if (!series) {
+    return {
+      unit: "requests",
+      series: [],
+    };
+  }
+
+  return {
+    unit: "requests",
+    series: [
+      {
+        name: "in_flight",
+        points: series.values.map(([ts, v]: [number, string]) => {
+          const num = Number(v);
+          return {
+            t: ts * 1000,
+            v: Number.isFinite(num) ? num : null,
+          };
+        }),
+      },
+    ],
+  };
+};
+
+export const formatErrorRate = (data: any) => {
+  const series = data?.data?.result?.[0];
+
+  if (!series) {
+    return {
+      unit: "percent",
+      series: [],
+    };
+  }
+
+  return {
+    unit: "percent",
+    series: [
+      {
+        name: "error_rate",
+        points: series.values.map(([ts, v]: [number, string]) => {
+          const num = Number(v);
+          return {
+            t: ts * 1000,
+            v: Number.isFinite(num) ? num : null,
+          };
+        }),
+      },
+    ],
+  };
+};

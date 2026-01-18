@@ -1,11 +1,15 @@
 import axios from 'axios';
-import { formatRps } from '../utils/format';
+import { formatInFlight } from '../utils/format';
 import { MetricsRequest } from './types';
 
-export const getRps: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
+export const getInFlightRequests: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
   const promql = `
-    sum(rate(http_requests_total{job="${serviceName}"}[30s]))
-    `;
+    sum(
+      http_in_flight_requests{
+        job="${serviceName}"
+      }
+    )
+  `;
 
   const resp = await axios.get(
     "http://mimir:9009/prometheus/api/v1/query_range",
@@ -22,5 +26,5 @@ export const getRps: MetricsRequest = async ({ serviceName, tenant, start, end, 
     }
   );
 
-  return formatRps(resp.data);
+  return formatInFlight(resp.data);
 };

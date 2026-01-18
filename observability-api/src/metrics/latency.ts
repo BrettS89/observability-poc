@@ -8,7 +8,7 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
     histogram_quantile(
       0.50,
       sum by (le) (
-        rate(http_request_duration_ms_bucket{job="${serviceName}"}[5m])
+        rate(http_request_duration_ms_bucket{job="${serviceName}"}[30s])
       )
     ),
     "quantile", "p50", "__name__", ".*"
@@ -18,7 +18,7 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
       histogram_quantile(
         0.95,
         sum by (le) (
-          rate(http_request_duration_ms_bucket{job="${serviceName}"}[5m])
+          rate(http_request_duration_ms_bucket{job="${serviceName}"}[30s])
         )
       ),
       "quantile", "p95", "__name__", ".*"

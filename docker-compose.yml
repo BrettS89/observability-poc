@@ -26,6 +26,20 @@ services:
     ports:
       - "4007:4007"
 
+  observability-web:
+    build:
+      context: ./observability-web
+      dockerfile: Dockerfile.dev
+    container_name: observability-web
+    env_file:
+      - ./observability-web/.env
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+    volumes:
+      - ./observability-web:/app
+      - /app/node_modules   
+
   ingest-engine:
     image: node:20
     working_dir: /app
