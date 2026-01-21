@@ -10,6 +10,7 @@ export const formatRps = (data: any, range: { start: number; end: number; step: 
     end: range.end,
     step: range.step,
     points: values,
+    defaultValue: 0,
   });
 
   return {
@@ -74,6 +75,7 @@ export const formatInFlight = (
     end: range.end,
     step: range.step,
     points: values,
+    defaultValue: 0,
   });
 
   return {
@@ -104,6 +106,7 @@ export const formatErrorRate = (data: any, range: { start: number; end: number; 
     end: range.end,
     step: range.step,
     points: values,
+    defaultValue: 0,
   });
 
   return {
@@ -122,8 +125,9 @@ function fillTimeGrid(args: {
   end: number;   // unix seconds
   step: number;  // seconds
   points: Array<[number, string]>; // [[unixSec, "value"], ...]
+  defaultValue?: number | null;    // 👈 NEW (optional)
 }): Point[] {
-  let { start, end, step, points } = args;
+  let { start, end, step, points, defaultValue = null } = args;
 
   start = Math.floor(start);
   end = Math.floor(end);
@@ -134,13 +138,18 @@ function fillTimeGrid(args: {
   const map = new Map<number, number>();
   for (const [tsSec, valStr] of points) {
     const v = Number(valStr);
-    if (Number.isFinite(v)) map.set(Math.floor(tsSec) * 1000, v);
+    if (Number.isFinite(v)) {
+      map.set(Math.floor(tsSec) * 1000, v);
+    }
   }
 
   const out: Point[] = [];
   for (let t = start; t <= end; t += step) {
     const ms = t * 1000;
-    out.push({ t: ms, v: map.get(ms) ?? null });
+    out.push({
+      t: ms,
+      v: map.get(ms) ?? defaultValue,
+    });
   }
 
   return out;
