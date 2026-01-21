@@ -40,5 +40,5 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
     }
   );
 
-  return formatLatency(resp.data);
+  return formatLatency(resp.data, { start, end, step });
 };

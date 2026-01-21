@@ -1,48 +1,35 @@
 import ReactECharts from 'echarts-for-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMetricsPoller } from '../../../hooks/use-metrics-poller';
+import { useTablesPoller } from '../../../hooks/use-table-poller';
 import { styles } from './styles';
 import { makeLatencyOption } from './charts/latency';
 import { makeSingleSeriesOption2 } from './charts/in-flight-requests';
 import { makeSingleSeriesOptionError } from './charts/error-rate';
+import { makeRpsOptions } from './charts/rps';
+import { TopEndpointsByLatencyTable } from './tables/top-endpoints-by-latency';
+import { timeAgo } from './utils';
+import { RangeSelector } from './range-selector';
 
-type Point = { t: number; v: any };
+import Chip from "@mui/joy/Chip";
+import Stack from "@mui/joy/Stack";
+import Typography from "@mui/joy/Typography";
+import { TopEndpointsByErrorTable } from './tables/top-endpoints-by-errors';
 
 export const Metrics = () => {
-  const metrics = useMetricsPoller(); // returns null initially
-  const [rpsPoints, setRpsPoints] = useState<Point[]>([]);
-  const [p50Points, setP50Points] = useState<Point[]>([]);
-  const [p95Points, setP95Points] = useState<Point[]>([]);
-  const [inFlightPoints, setInFlightPoints] = useState<Point[]>([]);
-  const [errorRatePoints, setErrorRatePoints] = useState<Point[]>([]);
+  const [range, setRage] = useState<string>('15m');
 
-  // ✅ Update rolling window AFTER render when new metrics arrive
-  useEffect(() => {
-    const next = metrics?.rps?.series?.[0]?.points;
-    if (!next?.length) return;
+  const { data: metrics, p50Points, p95Points, rpsPoints, errorRatePoints, inFlightPoints } = useMetricsPoller(range as any); // returns null initially
+  const tablesData = useTablesPoller();
 
-    setRpsPoints(prev => mergeWindow(prev, next, 15 * 60_000));
-  }, [metrics]);
-
-  // ✅ Safe even when metrics is null
   const rpsOption = useMemo(() => {
     const unit = metrics?.rps?.unit ?? 'req/s';
-    return makeSingleSeriesOption({
+    return makeRpsOptions({
       title: 'Requests Per Second',
       unit,
       points: rpsPoints,
     });
   }, [metrics?.rps?.unit, rpsPoints]);
-
-
-  useEffect(() => {
-    const p50Next = metrics?.latency?.series?.find((s) => s.name === "p50")?.points ?? [];
-    const p95Next = metrics?.latency?.series?.find((s) => s.name === "p95")?.points ?? [];
-    if (!p50Next.length && !p95Next.length) return;
-
-    if (p50Next.length) setP50Points((prev) => mergeWindow(prev, p50Next, 15 * 60_000));
-    if (p95Next.length) setP95Points((prev) => mergeWindow(prev, p95Next, 15 * 60_000));
-  }, [metrics]);
 
   const latencyOption = useMemo(() => {
     const unit = metrics?.latency?.unit ?? "ms";
@@ -60,22 +47,7 @@ export const Metrics = () => {
     });
   }, [errorRatePoints]);
 
-  useEffect(() => {
-    const next = metrics?.inFlightRequests?.series?.[0]?.points;
-    if (!next?.length) return;
-
-    setInFlightPoints(prev => mergeWindow(prev, next, 15 * 60_000));
-  }, [metrics]);
-
-  useEffect(() => {
-    const next = metrics?.errorRate?.series?.[0]?.points;
-    if (!next?.length) return;
-
-    setErrorRatePoints((prev) => mergeWindow(prev, next, 15 * 60_000));
-  }, [metrics]);
-
   const inFlightOption = useMemo(() => {
-    // const unit = metrics?.inFlightRequests?.unit ?? "req";
     return makeSingleSeriesOption2({
       title: "In-flight Requests",
       unit: "req",
@@ -86,17 +58,28 @@ export const Metrics = () => {
     });
       }, [metrics?.inFlightRequests?.unit, inFlightPoints]);
 
-  if (!metrics) {
+  if (!metrics || !tablesData) {
     return <div>Loading...</div>;
   }
 
   return (
     <div style={styles.page}>
       <div style={styles.charts}>
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          flexShrink: 0,
+        }}>
+          <RangeSelector
+            value={range as any}
+            onChange={setRage}
+          />
+        </div>
+        
         <div style={styles.chartRow}>
           <div style={styles.chart}>
             <div style={styles.chartHeader}>
-              <div style={styles.panelTitle}>Requests Per Second (req/s)</div>
+              <div style={styles.panelTitle}>Requests per Second (req/s)</div>
             </div>
 
             <div style={styles.chartBody}>
@@ -156,138 +139,87 @@ export const Metrics = () => {
             </div>
           </div>
         </div>
+
+        <div style={styles.chartRow}>
+          <div style={styles.table}>
+            <div style={styles.chartHeader}>
+              <div style={styles.panelTitle}>Top Endpoints by Latency</div>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.80)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    fontWeight: 600,
+                    px: 1,
+                  }}
+                >
+                  Last 15 min
+                </Chip>
+
+                <Typography
+                  level="body-sm"
+                  sx={{
+                    color: "rgba(255,255,255,0.45)",
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Updated {timeAgo(tablesData.endpoint_latency.asOf)}
+                </Typography>
+              </Stack>
+            </div>
+
+            <div style={styles.tableBody}>
+              <TopEndpointsByLatencyTable
+                rows={tablesData.endpoint_latency.rows}
+                onViewAll={() => console.log("view all")}
+              />
+            </div>
+          </div>
+
+          <div style={styles.chart}>
+            <div style={styles.chartHeader}>
+              <div style={styles.panelTitle}>Top Endpoints by Error Rate</div>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.80)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    fontWeight: 600,
+                    px: 1,
+                  }}
+                >
+                  Last 15 min
+                </Chip>
+
+                <Typography
+                  level="body-sm"
+                  sx={{
+                    color: "rgba(255,255,255,0.45)",
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Updated {timeAgo(tablesData.endpoint_latency.asOf)}
+                </Typography>
+              </Stack>
+            </div>
+            <div style={styles.tableBody}>
+              <TopEndpointsByErrorTable
+                rows={tablesData.endpoint_errors.rows}
+                onViewAll={() => console.log("view all")}
+              />
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );
 };
-
-function makeSingleSeriesOption(args: {
-  title: string;
-  unit: string;
-  points: { t: number; v: number }[];
-}) {
-  const line = "rgb(99, 102, 241)";
-
-  const maxV =
-    args.points.length > 0
-      ? Math.max(...args.points.map((p) => (Number.isFinite(p.v) ? p.v : 0)))
-      : 0;
-
-  // We want 4 horizontal bands => 5 ticks (0..max)
-  const bands = 4;
-
-  // "nice" step sizing (1, 2, 5 * 10^n)
-  const niceStep = (raw: number) => {
-    if (raw <= 0) return 1;
-    const exp = Math.floor(Math.log10(raw));
-    const base = raw / Math.pow(10, exp);
-    const niceBase = base <= 1 ? 1 : base <= 2 ? 2 : base <= 5 ? 5 : 10;
-    return niceBase * Math.pow(10, exp);
-  };
-
-  const interval = niceStep(maxV / bands || 1);
-  const yMax = interval * bands;
-
-  return {
-    backgroundColor: "transparent",
-    animation: false,
-    grid: { left: 52, right: 18, top: 26, bottom: 34 },
-
-    tooltip: {
-      trigger: "axis",
-      backgroundColor: "rgba(15, 23, 42, 0.92)",
-      borderWidth: 0,
-      textStyle: { color: "rgba(255,255,255,0.92)" },
-      valueFormatter: (v: number) => `${v.toFixed(3)} ${args.unit}`,
-    },
-
-    xAxis: {
-      type: "time",
-      axisLine: { lineStyle: { color: "rgba(255,255,255,0.18)" } },
-      axisTick: { show: false },
-      axisLabel: { color: "rgba(255,255,255,0.55)", fontSize: 11 },
-      splitLine: {
-        show: true,
-        lineStyle: {
-        color: "rgba(255,255,255,0.1)",
-        width: 1,
-      },
-    },
-    },
-
-    yAxis: {
-      type: "value",
-      min: 0,
-
-      // ✅ lock gridlines
-      max: yMax,
-      interval,
-
-      // ✅ prevent extra faint lines
-      minorTick: { show: false },
-      minorSplitLine: { show: false },
-
-      axisLine: { show: false },
-      axisTick: { show: false },
-
-      axisLabel: {
-        color: "rgba(255,255,255,0.55)",
-        fontSize: 11,
-        margin: 10,
-        formatter: (value: number) => {
-          if (!Number.isFinite(value)) return "";
-          if (value === 0) return "0";
-          return value < 1 ? value.toFixed(2) : value.toFixed(1);
-        },
-      },
-
-      splitLine: {
-        show: true,
-        lineStyle: { color: "rgba(255,255,255,0.1)" },
-      },
-
-      // IMPORTANT: scale=true makes ECharts “nice” ticks on its own (more lines)
-      // ✅ turn it off when you're manually controlling interval/max
-      scale: false,
-    },
-
-    series: [
-      {
-        name: args.title,
-        type: "line",
-        showSymbol: false,
-        smooth: false,
-        data: args.points.map((p) => [p.t, p.v]),
-        lineStyle: { width: 2, color: line },
-        itemStyle: { color: line },
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: "rgba(99, 102, 241, 0.22)" },
-              // { offset: 1, color: "rgba(99, 102, 241, 0.00)" },
-            ],
-          },
-        },
-        emphasis: { focus: "series", lineStyle: { width: 4 } },
-      },
-    ],
-  };
-}
-
-function mergeWindow(prev: Point[], next: Point[], windowMs: number): Point[] {
-  const map = new Map<number, number>();
-  for (const p of prev) map.set(p.t, p.v);
-  for (const p of next) map.set(p.t, p.v);
-
-  const cutoff = Date.now() - windowMs;
-
-  return Array.from(map.entries())
-    .map(([t, v]) => ({ t, v }))
-    .filter((p) => p.t >= cutoff)
-    .sort((a, b) => a.t - b.t);
-}

@@ -13,8 +13,17 @@ export const styles = {
     boxSizing: "border-box" as const,
     border: "1px solid #25272F",
   },
+  table: {
+    background: "#151820",
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 5,
+    padding: 16,
+    boxSizing: "border-box" as const,
+    border: "1px solid #25272F",
+  },
   panelTitle: {
-    fontSize: '16px',
+    fontSize: '18px',
     fontWeight: 700,
     letterSpacing: '0.02em',
     color: 'rgba(255, 255, 255, 0.88)',
@@ -33,6 +42,11 @@ export const styles = {
   },
   chartMeta: { fontSize: 12, opacity: 0.6 },
   chartBody: { height: "calc(100% - 24px)" },
+  tableBody: {
+    flex: "1 1 auto",
+    minHeight: 0,      // ✅ CRITICAL for tables inside flex containers
+    overflow: "auto",  // ✅ allows multiple rows without clipping
+  },
 
   error: { fontSize: 12, opacity: 0.8 },
 };

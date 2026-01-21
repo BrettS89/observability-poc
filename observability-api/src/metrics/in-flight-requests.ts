@@ -26,5 +26,5 @@ export const getInFlightRequests: MetricsRequest = async ({ serviceName, tenant,
     }
   );
 
-  return formatInFlight(resp.data);
+  return formatInFlight(resp.data, { start, end, step });
 };

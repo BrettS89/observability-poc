@@ -22,5 +22,5 @@ export const getRps: MetricsRequest = async ({ serviceName, tenant, start, end, 
     }
   );
 
-  return formatRps(resp.data);
+  return formatRps(resp.data, { start, end, step });
 };

@@ -1,5 +1,3 @@
-
-
 import axios from 'axios';
 import { formatErrorRate } from '../utils/format';
 import { MetricsRequest } from './types';
@@ -35,5 +33,5 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
     }
   );
 
-  return formatErrorRate(resp.data);
+  return formatErrorRate(resp.data, { start, end, step });
 };
