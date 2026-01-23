@@ -18,9 +18,10 @@ import { TopEndpointsByErrorTable } from './tables/top-endpoints-by-errors';
 
 export const Metrics = () => {
   const [range, setRage] = useState<string>('15m');
+  const [tableRange, setTableRange] = useState<string>('15m');
 
   const { data: metrics, p50Points, p95Points, rpsPoints, errorRatePoints, inFlightPoints } = useMetricsPoller(range as any); // returns null initially
-  const tablesData = useTablesPoller();
+  const tablesData = useTablesPoller(tableRange as any);
 
   const rpsOption = useMemo(() => {
     const unit = metrics?.rps?.unit ?? 'req/s';
@@ -138,6 +139,18 @@ export const Metrics = () => {
               />
             </div>
           </div>
+        </div>
+
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          flexShrink: 0,
+        }}>
+          <RangeSelector
+            value={tableRange as any}
+            onChange={setTableRange}
+            timeRanges={['5m', '15m', '1h']}
+          />
         </div>
 
         <div style={styles.chartRow}>

@@ -12,7 +12,6 @@ const windowMsByRange: Record<Range, number> = {
   "7d": 7 * 24 * 60 * 60_000,
 };
 
-// optional: if you want polling frequency to change with range
 const pollMsByRange: Record<Range, number> = {
   "15m": 10_000,
   "1h": 15_000,
@@ -36,6 +35,9 @@ export function useMetricsPoller(range: Range) {
   const inFlightRef = useRef(false);
   const stoppedRef = useRef(false);
 
+  // ✅ request-id guard: only the newest request is allowed to update state
+  const reqIdRef = useRef(0);
+
   useEffect(() => {
     stoppedRef.current = false;
 
@@ -52,14 +54,19 @@ export function useMetricsPoller(range: Range) {
       if (inFlightRef.current) return;
       inFlightRef.current = true;
 
-      // Abort any prior request (belt + suspenders)
+      // Abort any prior request
       cancelRef.current?.abort();
       const controller = new AbortController();
       cancelRef.current = controller;
 
+      // ✅ bump request id for THIS attempt
+      const reqId = ++reqIdRef.current;
+
       try {
-        // IMPORTANT: pass range to your API call (you said you'll handle the rest)
         const metrics = await getMetrics({ range, signal: controller.signal } as any);
+
+        // ✅ ignore stale responses (range changed / new request started)
+        if (reqId !== reqIdRef.current || stoppedRef.current) return;
 
         const nextRps = metrics?.rps?.series?.[0]?.points ?? [];
         if (nextRps.length) setRpsPoints((prev) => mergeWindow(prev, nextRps, windowMs));
@@ -82,25 +89,29 @@ export function useMetricsPoller(range: Range) {
 
         setData(metrics);
       } catch (e: any) {
-        // ignore abort
-        if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
+        // ignore abort/cancel
+        if (e?.name !== "CanceledError" && e?.name !== "AbortError" && e?.code !== "ERR_CANCELED") {
           // optionally log
           // console.error(e);
         }
       } finally {
-        inFlightRef.current = false;
-
-        const jitter = Math.floor(Math.random() * 2000);
-        timeoutRef.current = window.setTimeout(poll, pollMs + jitter);
+        // ✅ only the latest request schedules the next poll
+        if (reqId === reqIdRef.current && !stoppedRef.current) {
+          inFlightRef.current = false;
+          const jitter = Math.floor(Math.random() * 2000);
+          timeoutRef.current = window.setTimeout(poll, pollMs + jitter);
+        } else {
+          // stale request finishing: don't touch timers / flags for the new one
+        }
       }
     };
 
-    // 🔥 when range changes: hard reset + immediate fetch
+    // 🔥 when range changes: invalidate any in-flight response + hard reset + immediate fetch
+    reqIdRef.current++; // ✅ instantly makes any in-flight response stale
     cancelRef.current?.abort();
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     inFlightRef.current = false;
 
-    setData(null);
     setRpsPoints([]);
     setP50Points([]);
     setP95Points([]);
@@ -111,6 +122,7 @@ export function useMetricsPoller(range: Range) {
 
     return () => {
       stoppedRef.current = true;
+      reqIdRef.current++; // ✅ invalidate anything still resolving
       cancelRef.current?.abort();
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     };

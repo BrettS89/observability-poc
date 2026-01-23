@@ -1,15 +1,18 @@
 import { Box, Button } from "@mui/joy";
 
-type Range = "15m" | "1h" | "24h" | "7d";
+type Range = string;
 
 export function RangeSelector({
   value,
   onChange,
+  timeRanges,
 }: {
   value: Range;
   onChange: (v: Range) => void;
+  timeRanges?: string[];
+  
 }) {
-  const ranges: Range[] = ["15m", "1h", "24h", "7d"];
+  const ranges: Range[] = timeRanges ?? ["15m", "1h", "24h", "7d"];
 
   return (
     <Box

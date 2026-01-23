@@ -5,10 +5,12 @@ import { get10WorstEndpointsByErrorRate } from '../metrics/highest-error-endpoin
 const tablesRouter = Router();
 
 tablesRouter.get('/tables', async (req, res) => {
+  const range = (req.query.range ?? '15m') as string;
+
   try {
     const [slowestEndpoints, highestErrorEndpoints] = await Promise.all([
-      get10SlowestEndpoints({ serviceName: 'customer-api', tenant: 'test' }),
-      get10WorstEndpointsByErrorRate({ serviceName: 'customer-api', tenant: 'test' }),
+      get10SlowestEndpoints({ serviceName: 'customer-api', tenant: 'test', range }),
+      get10WorstEndpointsByErrorRate({ serviceName: 'customer-api', tenant: 'test', range }),
     ]);
 
     res.status(200).json({

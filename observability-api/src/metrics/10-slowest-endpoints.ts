@@ -5,9 +5,11 @@ const PROM_URL = "http://mimir:9009/prometheus/api/v1/query";
 export async function get10SlowestEndpoints({
   serviceName,
   tenant,
+  range,
 }: {
   serviceName: string;
   tenant: string;
+  range: string;
 }) {
   const headers = { "X-Scope-OrgID": tenant };
 
@@ -17,7 +19,7 @@ export async function get10SlowestEndpoints({
       histogram_quantile(
         0.95,
         sum by (le, method, route) (
-          rate(http_request_duration_ms_bucket{job="${serviceName}"}[15m])
+          rate(http_request_duration_ms_bucket{job="${serviceName}"}[${range}])
         )
       )
     )
@@ -27,14 +29,14 @@ export async function get10SlowestEndpoints({
     histogram_quantile(
       0.50,
       sum by (le, method, route) (
-        rate(http_request_duration_ms_bucket{job="${serviceName}"}[15m])
+        rate(http_request_duration_ms_bucket{job="${serviceName}"}[${range}])
       )
     )
   `;
 
   const rpsQuery = `
     sum by (method, route) (
-      rate(http_requests_total{job="${serviceName}"}[15m])
+      rate(http_requests_total{job="${serviceName}"}[${range}])
     )
   `;
 

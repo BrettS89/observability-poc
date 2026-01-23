@@ -5,9 +5,11 @@ const PROM_URL = "http://mimir:9009/prometheus/api/v1/query";
 export async function get10WorstEndpointsByErrorRate({
   serviceName,
   tenant,
+  range,
 }: {
   serviceName: string;
   tenant: string;
+  range: string;
 }) {
   const headers = { "X-Scope-OrgID": tenant };
 
@@ -20,12 +22,12 @@ export async function get10WorstEndpointsByErrorRate({
       clamp_max(
         100 *
           sum by (method, route) (
-            rate(http_requests_total{job="${serviceName}",status_class="5xx"}[15m])
+            rate(http_requests_total{job="${serviceName}",status_class="5xx"}[${range}])
           )
           /
           clamp_min(
             sum by (method, route) (
-              rate(http_requests_total{job="${serviceName}"}[15m])
+              rate(http_requests_total{job="${serviceName}"}[${range}])
             ),
             1e-9
           ),
@@ -37,14 +39,14 @@ export async function get10WorstEndpointsByErrorRate({
   // raw 5xx errors/sec (useful for context + for computing "errors" over window if you want later)
   const errorsPerSecQuery = `
     sum by (method, route) (
-      rate(http_requests_total{job="${serviceName}",status_class="5xx"}[15m])
+      rate(http_requests_total{job="${serviceName}",status_class="5xx"}[${range}])
     )
   `;
 
   // requests/sec per endpoint
   const rpsQuery = `
     sum by (method, route) (
-      rate(http_requests_total{job="${serviceName}"}[15m])
+      rate(http_requests_total{job="${serviceName}"}[${range}])
     )
   `;
 
