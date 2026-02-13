@@ -31,8 +31,9 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
       },
       headers: {
         "X-Scope-OrgID": tenant,
-        auth: promAuth,
       },
+      auth: promAuth,
+
     }
   );
 
