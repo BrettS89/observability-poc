@@ -2,6 +2,7 @@ import axios from 'axios';
 import { envVars } from '../config/environment-variables';
 import { formatInFlight } from '../utils/format';
 import { MetricsRequest } from './types';
+import { promAuth } from '../config/grafana-auth';
 
 export const getInFlightRequests: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
   const promql = `
@@ -23,8 +24,8 @@ export const getInFlightRequests: MetricsRequest = async ({ serviceName, tenant,
       },
       headers: {
         "X-Scope-OrgID": tenant,
-        Authorization: envVars.CLOUD_METRICS_TOKEN,
       },
+      auth: promAuth,
     }
   );
 

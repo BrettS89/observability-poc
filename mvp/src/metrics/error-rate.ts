@@ -2,6 +2,7 @@ import axios from 'axios';
 import { envVars } from '../config/environment-variables';
 import { formatErrorRate } from '../utils/format';
 import { MetricsRequest } from './types';
+import { promAuth } from '../config/grafana-auth';
 
 export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
   const promql = `
@@ -30,7 +31,7 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
       },
       headers: {
         "X-Scope-OrgID": tenant,
-        Authorization: envVars.CLOUD_METRICS_TOKEN,
+        auth: promAuth,
       },
     }
   );

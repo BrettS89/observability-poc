@@ -2,6 +2,7 @@ import axios from 'axios';
 import { formatRps } from '../utils/format';
 import { MetricsRequest } from './types';
 import { envVars } from '../config/environment-variables';
+import { promAuth } from '../config/grafana-auth';
 
 export const getRps: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
   const promql = `
@@ -19,8 +20,8 @@ export const getRps: MetricsRequest = async ({ serviceName, tenant, start, end, 
       },
       headers: {
         "X-Scope-OrgID": tenant,
-        Authorization: envVars.CLOUD_METRICS_TOKEN,
       },
+      auth: promAuth,
     }
   );
 

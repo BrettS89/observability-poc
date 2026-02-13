@@ -1,5 +1,6 @@
 import axios from "axios";
 import { envVars } from '../config/environment-variables';
+import { promAuth } from '../config/grafana-auth';
 
 const PROM_URL = `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query`;
 
@@ -12,7 +13,7 @@ export async function get10WorstEndpointsByErrorRate({
   tenant: string;
   range: string;
 }) {
-  const headers = { "X-Scope-OrgID": tenant, Authorization: envVars.CLOUD_METRICS_TOKEN, };
+  const headers = { "X-Scope-OrgID": tenant};
 
   // % error rate per endpoint (5xx / total) * 100
   // clamp_min prevents negative weirdness; clamp_max ensures it never exceeds 100
@@ -52,9 +53,9 @@ export async function get10WorstEndpointsByErrorRate({
   `;
 
   const [rateResp, errorsResp, rpsResp] = await Promise.all([
-    axios.get<PromVectorResp>(PROM_URL, { params: { query: errorRateQuery }, headers }),
-    axios.get<PromVectorResp>(PROM_URL, { params: { query: errorsPerSecQuery }, headers }),
-    axios.get<PromVectorResp>(PROM_URL, { params: { query: rpsQuery }, headers }),
+    axios.get<PromVectorResp>(PROM_URL, { params: { query: errorRateQuery }, headers, auth: promAuth }),
+    axios.get<PromVectorResp>(PROM_URL, { params: { query: errorsPerSecQuery }, headers, auth: promAuth }),
+    axios.get<PromVectorResp>(PROM_URL, { params: { query: rpsQuery }, headers, auth: promAuth }),
   ]);
 
   return formatTopEndpointsByErrorRate({
