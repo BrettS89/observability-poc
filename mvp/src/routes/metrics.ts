@@ -26,7 +26,9 @@ metricsRouter.get('/metrics', async (req, res) => {
   const start = end - cfg.rangeSec;
 
   try {
-        await getRps({ serviceName, tenant, start, end, step });
+        const data = await getRps({ serviceName, tenant, start, end, step });
+        console.log('INNNN');
+        console.log(data);
   } catch(e) {
     console.log(e);
   }
