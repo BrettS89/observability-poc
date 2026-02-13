@@ -27,7 +27,7 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
   `;
 
   const resp = await axios.get(
-    `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query`,
+    `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query_range`,
     {
       params: {
         query: promql,
