@@ -1,6 +1,7 @@
 import axios from "axios";
+import { envVars } from '../config/environment-variables';
 
-const PROM_URL = "http://mimir:9009/prometheus/api/v1/query";
+const PROM_URL = `${envVars.CLOUD_METRICS_URL}/prometheus/api/v1/query`;
 
 export async function get10WorstEndpointsByErrorRate({
   serviceName,
@@ -11,7 +12,7 @@ export async function get10WorstEndpointsByErrorRate({
   tenant: string;
   range: string;
 }) {
-  const headers = { "X-Scope-OrgID": tenant };
+  const headers = { "X-Scope-OrgID": tenant, Authorization: envVars.CLOUD_METRICS_TOKEN, };
 
   // % error rate per endpoint (5xx / total) * 100
   // clamp_min prevents negative weirdness; clamp_max ensures it never exceeds 100

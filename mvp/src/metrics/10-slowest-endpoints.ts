@@ -1,6 +1,7 @@
 import axios from "axios";
+import { envVars } from '../config/environment-variables';
 
-const PROM_URL = "http://mimir:9009/prometheus/api/v1/query";
+const PROM_URL = `${envVars.CLOUD_METRICS_URL}/prometheus/api/v1/querye`;
 
 export async function get10SlowestEndpoints({
   serviceName,
@@ -11,7 +12,7 @@ export async function get10SlowestEndpoints({
   tenant: string;
   range: string;
 }) {
-  const headers = { "X-Scope-OrgID": tenant };
+  const headers = { "X-Scope-OrgID": tenant, Authorization: envVars.CLOUD_METRICS_TOKEN, };
 
   const p95Query = `
     topk(

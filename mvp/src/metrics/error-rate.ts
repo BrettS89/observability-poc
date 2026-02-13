@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { envVars } from '../config/environment-variables';
 import { formatErrorRate } from '../utils/format';
 import { MetricsRequest } from './types';
 
@@ -19,7 +20,7 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
   `;
 
   const resp = await axios.get(
-    "http://mimir:9009/prometheus/api/v1/query_range",
+    `${envVars.CLOUD_METRICS_URL}/prometheus/api/v1/query_range`,
     {
       params: {
         query: promql,
@@ -29,6 +30,7 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
       },
       headers: {
         "X-Scope-OrgID": tenant,
+        Authorization: envVars.CLOUD_METRICS_TOKEN,
       },
     }
   );

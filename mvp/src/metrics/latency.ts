@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { envVars } from '../config/environment-variables';
 import { formatLatency } from '../utils/format';
 import { MetricsRequest } from './types';
 
@@ -26,7 +27,7 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
   `;
 
   const resp = await axios.get(
-    "http://mimir:9009/prometheus/api/v1/query_range",
+    `${envVars.CLOUD_METRICS_URL}/prometheus/api/v1/query_range`,
     {
       params: {
         query: promql,
@@ -36,6 +37,7 @@ export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, e
       },
       headers: {
         "X-Scope-OrgID": tenant,
+        Authorization: envVars.CLOUD_METRICS_TOKEN,
       },
     }
   );
