@@ -8,6 +8,8 @@ router.post('/otlp/v1/metrics', async (req, res) => {
   try {
     const tenant = req.headers['X-Scope-OrgID'] as string;
 
+    console.log(tenant);
+
     if (!tenant) return res.status(401).send('unauthorized');
 
     const upstreamHeaders: Record<string, string> = {
