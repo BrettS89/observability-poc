@@ -24,7 +24,7 @@ export async function get10SlowestEndpoints({
         )
       )
     )
-  `;
+  `
 
   const p50Query = `
     histogram_quantile(
