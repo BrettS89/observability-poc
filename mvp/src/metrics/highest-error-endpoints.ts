@@ -1,7 +1,7 @@
 import axios from "axios";
 import { envVars } from '../config/environment-variables';
 
-const PROM_URL = `${envVars.CLOUD_METRICS_URL}/api/v1/query`;
+const PROM_URL = `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query`;
 
 export async function get10WorstEndpointsByErrorRate({
   serviceName,

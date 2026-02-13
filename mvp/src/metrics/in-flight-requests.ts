@@ -13,7 +13,7 @@ export const getInFlightRequests: MetricsRequest = async ({ serviceName, tenant,
   `;
 
   const resp = await axios.get(
-    `${envVars.CLOUD_METRICS_URL}/api/v1/query_range`,
+    `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query`,
     {
       params: {
         query: promql,
