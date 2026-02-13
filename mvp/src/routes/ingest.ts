@@ -6,10 +6,7 @@ const router = Router();
 
 router.post('/otlp/v1/metrics', async (req, res) => {
   try {
-    console.log(req.headers);
     const tenant = req.headers['X-Scope-OrgID'] || req.headers['x-scope-orgid'] as string;
-
-    console.log(tenant);
 
     if (!tenant) return res.status(401).send('unauthorized');
 
@@ -27,11 +24,18 @@ router.post('/otlp/v1/metrics', async (req, res) => {
       retries: 0,
     });
 
-    const resp = await mimirClient.request.post(
-      '/otlp/v1/metrics',
-      req.body,
-      { headers: upstreamHeaders },
-    );
+    try {
+      var resp = await mimirClient.request.post(
+        '/otlp/v1/metrics',
+        req.body,
+        { headers: upstreamHeaders },
+      );
+    } catch(e) {
+      console.log(e);
+      throw e;
+    }
+
+    
 
     const text = await resp.data;
     res.status(resp.status).send(text);
