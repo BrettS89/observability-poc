@@ -21,7 +21,7 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
   `;
 
   const resp = await axios.get(
-    `${envVars.CLOUD_METRICS_URL}/api/prom/api/v1/query_range`,
+    `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query_range`,
     {
       params: {
         query: promql,
@@ -33,7 +33,6 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
         "X-Scope-OrgID": tenant,
       },
       auth: promAuth,
-
     }
   );
 
