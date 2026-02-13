@@ -1,6 +1,7 @@
 import express from 'express';
 import { metricsIngestRouter } from './routes/ingest';
 import { metricsRouter } from './routes/metrics';
+import { tablesRouter } from './routes/tables';
 
 export const app = express();
 
@@ -13,3 +14,4 @@ app.use(express.json());
 
 app.use(metricsIngestRouter);
 app.use(metricsRouter);
+app.use(tablesRouter);

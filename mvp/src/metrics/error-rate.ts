@@ -20,7 +20,7 @@ export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start,
   `;
 
   const resp = await axios.get(
-    `${envVars.CLOUD_METRICS_URL}/prometheus/api/v1/query_range`,
+    `${envVars.CLOUD_METRICS_URL}/api/v1/query_range`,
     {
       params: {
         query: promql,
