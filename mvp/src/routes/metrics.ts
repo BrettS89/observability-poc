@@ -28,7 +28,7 @@ metricsRouter.get('/metrics', async (req, res) => {
   try {
         const data = await getRps({ serviceName, tenant, start, end, step });
         console.log('INNNN');
-        console.log(data.series[0].points);
+        console.log(data.series.points);
   } catch(e) {
     console.log(e);
   }
