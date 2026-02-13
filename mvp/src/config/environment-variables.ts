@@ -5,6 +5,7 @@ type EnvVars = {
   PORT: number;
   CLOUD_METRICS_URL: string;
   CLOUD_METRICS_TOKEN: string;
+  CLOUD_PROMETHEUS_URL: string;
 };
 
 const schema: JSONSchemaType<EnvVars> = {
@@ -15,12 +16,14 @@ const schema: JSONSchemaType<EnvVars> = {
     PORT: { type: 'integer', minimum: 1, maximum: 65535 },
     CLOUD_METRICS_URL: { type: 'string' },
     CLOUD_METRICS_TOKEN: { type: 'string' },
+    CLOUD_PROMETHEUS_URL: { type: 'string' },
   },
   required: [
     'NODE_ENV',
     'PORT',
     'CLOUD_METRICS_URL',
     'CLOUD_METRICS_TOKEN',
+    'CLOUD_PROMETHEUS_URL',
   ],
 };
 
@@ -34,6 +37,7 @@ export function validateEnvironmentVariables(): Readonly<EnvVars> {
     PORT: process.env.PORT,
     CLOUD_METRICS_URL: process.env.CLOUD_METRICS_URL,
     CLOUD_METRICS_TOKEN: process.env.CLOUD_METRICS_TOKEN,
+    CLOUD_PROMETHEUS_URL: process.env.CLOUD_PROMETHEUS_URL,
   };
 
   const ok = validate(data);
