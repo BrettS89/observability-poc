@@ -25,6 +25,12 @@ metricsRouter.get('/metrics', async (req, res) => {
   const end = Math.floor(Date.now() / 1000 / step) * step;
   const start = end - cfg.rangeSec;
 
+  try {
+        await getRps({ serviceName, tenant, start, end, step });
+  } catch(e) {
+    console.log(e);
+  }
+
   const [rps, latency, inFlight, errorRate] = await Promise.all([
     getRps({ serviceName, tenant, start, end, step }),
     getLatency({ serviceName, tenant, start, end, step }),
