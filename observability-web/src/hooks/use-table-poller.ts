@@ -9,7 +9,7 @@ const pollMsByRange: Record<Range, number> = {
   "1h": 60_000,
 };
 
-export function useTablesPoller(range: Range) {
+export function useTablesPoller(range: Range, tenant: string, service: string) {
   console.log(range);
   const pollMs = useMemo(() => {
     const ms = pollMsByRange[range];
@@ -51,7 +51,7 @@ export function useTablesPoller(range: Range) {
       const reqId = ++reqIdRef.current;
 
       try {
-        const tables = await getTables({ range, signal: controller.signal } as any);
+        const tables = await getTables({ range, signal: controller.signal, tenant, service });
 
         // ✅ ignore stale responses (range changed / new request started)
         if (reqId !== reqIdRef.current || stoppedRef.current) return;

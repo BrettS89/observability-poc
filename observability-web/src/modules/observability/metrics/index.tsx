@@ -1,5 +1,6 @@
 import ReactECharts from 'echarts-for-react';
 import { useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useMetricsPoller } from '../../../hooks/use-metrics-poller';
 import { useTablesPoller } from '../../../hooks/use-table-poller';
 import { styles } from './styles';
@@ -17,11 +18,17 @@ import Typography from "@mui/joy/Typography";
 import { TopEndpointsByErrorTable } from './tables/top-endpoints-by-errors';
 
 export const Metrics = () => {
+  const { tenant, service } = useParams();
+
+  if (!tenant || !service) {
+    return <div>Must specify tenant and service</div>;
+  }
+
   const [range, setRage] = useState<string>('15m');
   const [tableRange, setTableRange] = useState<string>('15m');
 
-  const { data: metrics, p50Points, p95Points, rpsPoints, errorRatePoints, inFlightPoints } = useMetricsPoller(range as any); // returns null initially
-  const tablesData = useTablesPoller(tableRange as any);
+  const { data: metrics, p50Points, p95Points, rpsPoints, errorRatePoints, inFlightPoints } = useMetricsPoller(range as any, tenant, service); // returns null initially
+  const tablesData = useTablesPoller(tableRange as any, tenant, service);
 
   const rpsOption = useMemo(() => {
     const unit = metrics?.rps?.unit ?? 'req/s';

@@ -1,3 +1,4 @@
+import { envVars } from '../config/environment-variables';
 import { createHttpClient } from '../http-client';
 import { Router } from 'express';
 
@@ -5,7 +6,7 @@ const router = Router();
 
 router.post('/otlp/v1/metrics', async (req, res) => {
   try {
-    const tenant = 'test'; // get from headers and do auth
+    const tenant = req.headers['X-Scope-OrgID'] as string;
 
     if (!tenant) return res.status(401).send('unauthorized');
 
@@ -13,14 +14,12 @@ router.post('/otlp/v1/metrics', async (req, res) => {
       'content-type': req.header('content-type') ?? 'application/json',
       ...(req.header('content-encoding') ? { 'content-encoding': req.header('content-encoding')! } : {}),
       'X-Scope-OrgID': tenant,
+      Authorization: envVars.CLOUD_METRICS_TOKEN,
     };
 
-    // Optionally forward User-Agent or trace headers if you want
-    // upstreamHeaders['user-agent'] = req.header('user-agent') ?? 'ingest-engine';
- 
     const mimirClient = createHttpClient({
-      name: 'mimir-otlp-client',
-      baseURL: 'http://mimir:9009',
+      name: 'otlp-metrics-client',
+      baseURL: envVars.CLOUD_METRICS_URL,
       timeoutMs: 2000,
       retries: 0,
     });
@@ -39,4 +38,4 @@ router.post('/otlp/v1/metrics', async (req, res) => {
   }
 });
 
-export { router as metricsRouter };
+export { router as metricsIngestRouter };

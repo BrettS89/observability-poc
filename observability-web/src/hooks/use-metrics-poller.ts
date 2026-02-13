@@ -19,7 +19,7 @@ const pollMsByRange: Record<Range, number> = {
   "7d": 60_000,
 };
 
-export function useMetricsPoller(range: Range) {
+export function useMetricsPoller(range: Range, tenant: string, service: string) {
   const windowMs = useMemo(() => windowMsByRange[range], [range]);
   const pollMs = useMemo(() => pollMsByRange[range], [range]);
 
@@ -63,7 +63,7 @@ export function useMetricsPoller(range: Range) {
       const reqId = ++reqIdRef.current;
 
       try {
-        const metrics = await getMetrics({ range, signal: controller.signal } as any);
+        const metrics = await getMetrics({ range, signal: controller.signal, tenant, service });
 
         // ✅ ignore stale responses (range changed / new request started)
         if (reqId !== reqIdRef.current || stoppedRef.current) return;

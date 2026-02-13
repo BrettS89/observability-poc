@@ -38,12 +38,14 @@ export type TablesPayload = {
   };
 };
 
-export const getMetrics = async ({ range, signal }: { range: string, signal: AbortSignal }) => {
+export const getMetrics = async ({ range, signal, tenant, service }: { range: string, signal: AbortSignal, tenant: string, service: string }) => {
   const { data } = await http<MetricsPayload>({
     url: '/metrics',
     method: 'GET',
     params: {
       range,
+      tenant,
+      service,
     },
     signal,
   });
@@ -51,12 +53,14 @@ export const getMetrics = async ({ range, signal }: { range: string, signal: Abo
   return data;
 };
 
-export const getTables = async ({ range, signal }: { range: string, signal: AbortSignal }) => {
+export const getTables = async ({ range, signal, tenant, service }: { range: string, signal: AbortSignal, tenant: string, service: string }) => {
   const { data } = await http<TablesPayload>({
     url: '/tables',
     method: 'GET',
     params: {
       range,
+      tenant,
+      service,
     },
     signal,
   });
