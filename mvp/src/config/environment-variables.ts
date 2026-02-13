@@ -1,7 +1,7 @@
 import Ajv, { JSONSchemaType } from 'ajv';
 
 type EnvVars = {
-  NODE_ENV: 'local' | 'dev' | 'prod';
+  NODE_ENV: 'local' | 'development' | 'production';
   PORT: number;
   CLOUD_METRICS_URL: string;
   CLOUD_METRICS_TOKEN: string;
@@ -11,7 +11,7 @@ const schema: JSONSchemaType<EnvVars> = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    NODE_ENV: { type: 'string', enum: ['local', 'dev', 'prod'] },
+    NODE_ENV: { type: 'string', enum: ['local', 'development', 'production'] },
     PORT: { type: 'integer', minimum: 1, maximum: 65535 },
     CLOUD_METRICS_URL: { type: 'string' },
     CLOUD_METRICS_TOKEN: { type: 'string' },
