@@ -6,7 +6,8 @@ const router = Router();
 
 router.post('/otlp/v1/metrics', async (req, res) => {
   try {
-    const tenant = req.headers['X-Scope-OrgID'] as string;
+    console.log(req.headers);
+    const tenant = req.headers['X-Scope-OrgID'] || req.headers['x-scope-orgid'] as string;
 
     console.log(tenant);
 
@@ -15,7 +16,7 @@ router.post('/otlp/v1/metrics', async (req, res) => {
     const upstreamHeaders: Record<string, string> = {
       'content-type': req.header('content-type') ?? 'application/json',
       ...(req.header('content-encoding') ? { 'content-encoding': req.header('content-encoding')! } : {}),
-      'X-Scope-OrgID': tenant,
+      'X-Scope-OrgID': tenant as any,
       Authorization: envVars.CLOUD_METRICS_TOKEN,
     };
 
