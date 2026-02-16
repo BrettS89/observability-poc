@@ -21,7 +21,7 @@ export async function get10SlowestEndpoints({
       histogram_quantile(
         0.95,
         sum by (le, method, route) (
-          rate(http_request_duration_ms_bucket{job="${serviceName}"}[${range}])
+          rate(http_request_duration_ms_milliseconds_bucket{job="${serviceName}"}[${range}])
         )
       )
     )
@@ -31,7 +31,7 @@ export async function get10SlowestEndpoints({
     histogram_quantile(
       0.50,
       sum by (le, method, route) (
-        rate(http_request_duration_ms_bucket{job="${serviceName}"}[${range}])
+        rate(http_request_duration_ms_milliseconds_bucket{job="${serviceName}"}[${range}])
       )
     )
   `;
