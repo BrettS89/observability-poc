@@ -30,18 +30,26 @@ export const formatLatency = (
 ) => {
   const result = data?.data?.result ?? [];
 
+  const toName = (q: any) => {
+    if (!q) return "unknown";
+    // new style: "p50" / "p95"
+    if (q === "p50" || q === "p95") return q;
+    // old style: "0.5" / "0.95" (sometimes number)
+    const qs = String(q);
+    if (qs === "0.5") return "p50";
+    if (qs === "0.95") return "p95";
+    return qs;
+  };
+
   return {
     unit: "ms",
     series: result.map((s: any) => {
-      // If you’re querying with `quantile="0.5"` / `quantile="0.95"`
-      // you can map it to friendly names:
-      const q = s.metric?.quantile;
-      const name =
-        q === "0.5" ? "p50" :
-        q === "0.95" ? "p95" :
-        q ?? "unknown";
+      const name = toName(s.metric?.quantile);
 
-      const values: Array<[number, string]> = s?.values ?? [];
+      // range query returns `values`; instant query returns `value`
+      const values: Array<[number, string]> =
+        s?.values ??
+        (s?.value ? [s.value] : []);
 
       const points: Point[] = fillTimeGrid({
         start: range.start,
