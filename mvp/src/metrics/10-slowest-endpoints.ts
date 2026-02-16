@@ -48,9 +48,9 @@ export async function get10SlowestEndpoints({
     axios.get<PromVectorResp>(PROM_URL, { params: { query: rpsQuery }, headers, auth: promAuth  }),
   ]);
 
-  console.log(p95Resp);
-  console.log(p50Resp);
-  console.log(rpsResp);
+  console.log(p95Resp.data);
+  console.log(p50Resp.data);
+  console.log(rpsResp.data);
 
   return formatTopEndpoints({
     p95: p95Resp.data,
