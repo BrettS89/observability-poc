@@ -10,7 +10,6 @@ const pollMsByRange: Record<Range, number> = {
 };
 
 export function useTablesPoller(range: Range, tenant: string, service: string) {
-  console.log(range);
   const pollMs = useMemo(() => {
     const ms = pollMsByRange[range];
     return Math.max(10_000, ms ?? 60_000);

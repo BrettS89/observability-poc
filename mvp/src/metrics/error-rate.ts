@@ -5,8 +5,6 @@ import { MetricsRequest } from './types';
 import { promAuth } from '../config/grafana-auth';
 
 export const getErrorRate: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
-  console.log(tenant);
-  console.log(serviceName);
   const promql = `
     100 *
       sum(rate(http_requests_total{

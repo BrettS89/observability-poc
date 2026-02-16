@@ -24,8 +24,6 @@ router.post('/otlp/v1/metrics', async (req, res) => {
       retries: 0,
     });
 
-    console.log(JSON.stringify(req.body));
-
     try {
       var resp = await mimirClient.request.post(
         '/otlp/v1/metrics',
@@ -36,8 +34,6 @@ router.post('/otlp/v1/metrics', async (req, res) => {
       console.log(e);
       throw e;
     }
-
-    
 
     const text = await resp.data;
     res.status(resp.status).send(text);
