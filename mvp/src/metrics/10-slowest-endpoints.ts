@@ -42,6 +42,10 @@ export async function get10SlowestEndpoints({
     )
   `;
 
+  console.log(p95Query);
+  console.log(p50Query);
+  console.log(rpsQuery);
+
   const [p95Resp, p50Resp, rpsResp] = await Promise.all([
     axios.get<PromVectorResp>(PROM_URL, { params: { query: p95Query }, headers, auth: promAuth }),
     axios.get<PromVectorResp>(PROM_URL, { params: { query: p50Query }, headers, auth: promAuth  }),
