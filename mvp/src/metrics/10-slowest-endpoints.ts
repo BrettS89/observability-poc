@@ -19,15 +19,23 @@ function key(metric: Record<string, string>) {
   return `${metric.method ?? "UNKNOWN"} ${metric.route ?? "unknown"}`;
 }
 
+function rangeToSeconds(range: string): number {
+  const m = /^(\d+)\s*([smhd])$/.exec(range.trim());
+  if (!m) throw new Error(`Invalid range: "${range}" (expected like "15m", "1h")`);
+  const n = Number(m[1]);
+  const unit = m[2];
+  const mult =
+    unit === "s" ? 1 :
+    unit === "m" ? 60 :
+    unit === "h" ? 3600 :
+    unit === "d" ? 86400 :
+    1;
+  return n * mult;
+}
+
 function toNumber(x: any): number | null {
   const n = Number(x);
   return Number.isFinite(n) ? n : null;
-}
-
-function formatCount(n: number): number {
-  // Keep it numeric for sorting; format for display in UI if you prefer.
-  // If you want compact strings (1.2k), do that in the frontend.
-  return Math.round(n);
 }
 
 async function instantQuery(query: string, headers: Record<string, string>) {
@@ -42,23 +50,25 @@ async function instantQuery(query: string, headers: Record<string, string>) {
 export async function get10SlowestEndpoints({
   serviceName,
   tenant,
-  range, // "5m" | "15m" | "1h" etc
+  range,
 }: {
   serviceName: string;
   tenant: string;
   range: string;
 }) {
   const headers = { "X-Scope-OrgID": tenant };
+  const rangeSeconds = rangeToSeconds(range);
 
   const bucket = `http_request_duration_ms_milliseconds_bucket`;
 
+  // ✅ clamp_min prevents negative increases after restarts/resets
   const p95Query = `
     topk(
       10,
       histogram_quantile(
         0.95,
         sum by (le, method, route) (
-          increase(${bucket}{job="${serviceName}"}[${range}])
+          clamp_min(increase(${bucket}{job="${serviceName}"}[${range}]), 0)
         )
       )
     )
@@ -68,15 +78,15 @@ export async function get10SlowestEndpoints({
     histogram_quantile(
       0.50,
       sum by (le, method, route) (
-        increase(${bucket}{job="${serviceName}"}[${range}])
+        clamp_min(increase(${bucket}{job="${serviceName}"}[${range}]), 0)
       )
     )
   `;
 
-  // ✅ Total requests in the selected window (not averaged per second)
+  // ✅ requests in window
   const reqsQuery = `
     sum by (method, route) (
-      increase(http_requests_total{job="${serviceName}"}[${range}])
+      clamp_min(increase(http_requests_total{job="${serviceName}"}[${range}]), 0)
     )
   `;
 
@@ -90,7 +100,7 @@ export async function get10SlowestEndpoints({
     p95: p95Resp.data,
     p50: p50Resp.data,
     reqs: reqsResp.data,
-    window: range,
+    rangeSeconds,
   });
 }
 
@@ -98,12 +108,12 @@ export function formatTopEndpoints({
   p95,
   p50,
   reqs,
-  window,
+  rangeSeconds,
 }: {
   p95: PromVectorResp;
   p50: PromVectorResp;
   reqs: PromVectorResp;
-  window: string;
+  rangeSeconds: number;
 }) {
   const p95Rows = p95?.data?.result ?? [];
   const p50Rows = p50?.data?.result ?? [];
@@ -118,7 +128,7 @@ export function formatTopEndpoints({
   const reqMap = new Map<string, number>();
   for (const r of reqRows) {
     const v = toNumber(r.value?.[1]);
-    if (v != null) reqMap.set(key(r.metric), formatCount(v));
+    if (v != null) reqMap.set(key(r.metric), Math.round(v));
   }
 
   const rows = p95Rows
@@ -130,14 +140,25 @@ export function formatTopEndpoints({
       const method = r.metric?.method ?? "UNKNOWN";
       const route = r.metric?.route ?? "unknown";
 
+      const requests = reqMap.get(k) ?? 0;
+      const rpsAvg = requests / rangeSeconds;
+
       return {
         endpoint: k,
         method,
         route,
         p95: Math.round(p95v),
         p50: p50Map.get(k) ?? null,
-        // ✅ requests in window
-        requests: reqMap.get(k) ?? 0,
+
+        // ✅ new fields
+        requests,
+        rpsAvg: Number(rpsAvg.toFixed(4)),
+
+        // ✅ backward-compat: keep whatever your UI expects today.
+        // If your column label still says "RPS" but you want to show requests, keep this:
+        rps: requests,
+        // If instead you want actual avg rps, swap to:
+        // rps: Number(rpsAvg.toFixed(4)),
       };
     })
     .filter(Boolean) as Array<{
@@ -147,6 +168,8 @@ export function formatTopEndpoints({
       p95: number;
       p50: number | null;
       requests: number;
+      rpsAvg: number;
+      rps: number;
     }>;
 
   const asOfSeconds = p95Rows[0]?.value?.[0];
@@ -156,7 +179,6 @@ export function formatTopEndpoints({
   return {
     unit: "ms",
     asOf,
-    window, // e.g. "15m" so UI can label "Requests (last 15m)"
     rows,
   };
 }
