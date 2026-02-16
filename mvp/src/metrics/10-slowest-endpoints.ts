@@ -2,34 +2,80 @@ import axios from "axios";
 import { envVars } from "../config/environment-variables";
 import { promAuth } from "../config/grafana-auth";
 
-const PROM_RANGE_URL = `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query_range`;
+const PROM_URL = `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query`;
+
+type PromVectorResp = {
+  status: string;
+  data?: {
+    resultType: "vector";
+    result: Array<{
+      metric: Record<string, string>;
+      value: [number, string]; // [unixSeconds, "value"]
+    }>;
+  };
+};
+
+type Point = { t: number; v: number };
+
+function key(metric: Record<string, string>) {
+  return `${metric.method ?? "UNKNOWN"} ${metric.route ?? "unknown"}`;
+}
+
+function rangeToSeconds(range: string): number {
+  // supports: 30s, 5m, 15m, 1h, 24h, 7d
+  const m = /^(\d+)\s*([smhd])$/.exec(range.trim());
+  if (!m) throw new Error(`Invalid range: "${range}" (expected like "15m", "1h")`);
+  const n = Number(m[1]);
+  const unit = m[2];
+  const mult =
+    unit === "s" ? 1 :
+    unit === "m" ? 60 :
+    unit === "h" ? 3600 :
+    unit === "d" ? 86400 :
+    1;
+  return n * mult;
+}
+
+function toNumber(x: any): number | null {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function instantQuery(query: string, headers: Record<string, string>) {
+  // IMPORTANT: /api/v1/query "time" is unix seconds (NOT ms)
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  return axios.get<PromVectorResp>(PROM_URL, {
+    params: { query, time: nowSec },
+    headers,
+    auth: promAuth,
+  });
+}
 
 export async function get10SlowestEndpoints({
   serviceName,
   tenant,
-  range,
+  range, // "5m" | "15m" | "1h" etc
 }: {
   serviceName: string;
   tenant: string;
-  range: string; // "5m" | "15m" | "1h"
+  range: string;
 }) {
   const headers = { "X-Scope-OrgID": tenant };
+  const rangeSeconds = rangeToSeconds(range);
 
-  const now = Math.floor(Date.now() / 1000);
+  // NOTE: Grafana Cloud is exposing your histogram as:
+  // http_request_duration_ms_milliseconds_bucket/_sum/_count
+  const bucket = `http_request_duration_ms_milliseconds_bucket`;
 
-  const rangeSeconds = parseRange(range);
-  const start = now - rangeSeconds;
-
-  // 1 datapoint every 30s is perfect for tables
-  const step = 30;
-
+  // Use increase() for table stats so they represent the whole window (not "right now")
   const p95Query = `
     topk(
       10,
       histogram_quantile(
         0.95,
         sum by (le, method, route) (
-          rate(http_request_duration_ms_milliseconds_bucket{job="${serviceName}"}[${range}])
+          increase(${bucket}{job="${serviceName}"}[${range}])
         )
       )
     )
@@ -39,39 +85,22 @@ export async function get10SlowestEndpoints({
     histogram_quantile(
       0.50,
       sum by (le, method, route) (
-        rate(http_request_duration_ms_milliseconds_bucket{job="${serviceName}"}[${range}])
+        increase(${bucket}{job="${serviceName}"}[${range}])
       )
     )
   `;
 
+  // Average RPS over the whole window (so it won't show 0.0 if traffic happened earlier)
   const rpsQuery = `
     sum by (method, route) (
-      rate(http_requests_total{job="${serviceName}"}[${range}])
-    )
+      increase(http_requests_total{job="${serviceName}"}[${range}])
+    ) / ${rangeSeconds}
   `;
 
-  const params = {
-    start,
-    end: now,
-    step,
-  };
-
   const [p95Resp, p50Resp, rpsResp] = await Promise.all([
-    axios.get(PROM_RANGE_URL, {
-      params: { ...params, query: p95Query },
-      headers,
-      auth: promAuth,
-    }),
-    axios.get(PROM_RANGE_URL, {
-      params: { ...params, query: p50Query },
-      headers,
-      auth: promAuth,
-    }),
-    axios.get(PROM_RANGE_URL, {
-      params: { ...params, query: rpsQuery },
-      headers,
-      auth: promAuth,
-    }),
+    instantQuery(p95Query, headers),
+    instantQuery(p50Query, headers),
+    instantQuery(rpsQuery, headers),
   ]);
 
   return formatTopEndpoints({
@@ -81,68 +110,39 @@ export async function get10SlowestEndpoints({
   });
 }
 
-function parseRange(r: string): number {
-  if (r.endsWith("m")) return Number(r.slice(0, -1)) * 60;
-  if (r.endsWith("h")) return Number(r.slice(0, -1)) * 3600;
-  return 300;
-}
-
-type PromMatrixResp = {
-  status: string;
-  data?: {
-    resultType: "matrix";
-    result: Array<{
-      metric: Record<string, string>;
-      values: Array<[number, string]>;
-    }>;
-  };
-};
-
-function latestValue(values: Array<[number, string]>): number | null {
-  if (!values?.length) return null;
-
-  const v = Number(values[values.length - 1][1]);
-  return Number.isFinite(v) ? v : null;
-}
-
-function key(metric: Record<string, string>) {
-  return `${metric.method ?? "UNKNOWN"} ${metric.route ?? "unknown"}`;
-}
-
 export function formatTopEndpoints({
   p95,
   p50,
   rps,
 }: {
-  p95: PromMatrixResp;
-  p50: PromMatrixResp;
-  rps: PromMatrixResp;
+  p95: PromVectorResp;
+  p50: PromVectorResp;
+  rps: PromVectorResp;
 }) {
   const p95Rows = p95?.data?.result ?? [];
   const p50Rows = p50?.data?.result ?? [];
   const rpsRows = rps?.data?.result ?? [];
 
   const p50Map = new Map<string, number>();
-  const rpsMap = new Map<string, number>();
-
   for (const r of p50Rows) {
-    const v = latestValue(r.values);
+    const v = toNumber(r.value?.[1]);
     if (v != null) p50Map.set(key(r.metric), Math.round(v));
   }
 
+  const rpsMap = new Map<string, number>();
   for (const r of rpsRows) {
-    const v = latestValue(r.values);
+    const v = toNumber(r.value?.[1]);
     if (v != null) rpsMap.set(key(r.metric), Number(v.toFixed(2)));
   }
 
   const rows = p95Rows
     .map((r) => {
+      const k = key(r.metric);
+      const p95v = toNumber(r.value?.[1]);
+      if (p95v == null) return null;
+
       const method = r.metric?.method ?? "UNKNOWN";
       const route = r.metric?.route ?? "unknown";
-      const k = `${method} ${route}`;
-
-      const p95v = latestValue(r.values);
-      if (p95v == null) return null;
 
       return {
         endpoint: k,
@@ -162,10 +162,9 @@ export function formatTopEndpoints({
       rps: number;
     }>;
 
+  const asOfSeconds = p95Rows[0]?.value?.[0];
   const asOf =
-    p95Rows[0]?.values?.slice(-1)?.[0]?.[0] != null
-      ? Math.round(p95Rows[0].values.slice(-1)[0][0] * 1000)
-      : Date.now();
+    Number.isFinite(asOfSeconds) ? Math.round(Number(asOfSeconds) * 1000) : Date.now();
 
   return {
     unit: "ms",
