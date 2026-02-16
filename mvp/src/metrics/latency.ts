@@ -6,26 +6,26 @@ import { promAuth } from '../config/grafana-auth';
 
 export const getLatency: MetricsRequest = async ({ serviceName, tenant, start, end, step }) => {
   const promql = `
-    label_replace(
+  label_replace(
     histogram_quantile(
       0.50,
-      sum by (le) (
+      sum by (le, job) (
         rate(http_request_duration_ms_bucket{job="${serviceName}"}[30s])
       )
     ),
-    "quantile", "p50", "__name__", ".*"
-    )
-    or
-    label_replace(
-      histogram_quantile(
-        0.95,
-        sum by (le) (
-          rate(http_request_duration_ms_bucket{job="${serviceName}"}[30s])
-        )
-      ),
-      "quantile", "p95", "__name__", ".*"
-    )
-  `;
+    "quantile", "p50", "job", ".*"
+  )
+  or
+  label_replace(
+    histogram_quantile(
+      0.95,
+      sum by (le, job) (
+        rate(http_request_duration_ms_bucket{job="${serviceName}"}[30s])
+      )
+    ),
+    "quantile", "p95", "job", ".*"
+  )
+`;
 
   const resp = await axios.get(
     `${envVars.CLOUD_PROMETHEUS_URL}/api/prom/api/v1/query_range`,
