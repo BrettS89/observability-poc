@@ -9,7 +9,7 @@ export const app = express();
 app.use(cors());
 
 app.use(express.raw({
-  type: ['application/x-protobuf', 'application/octet-stream', 'application/json'],
+  type: ['application/x-protobuf', 'application/octet-stream'],
   limit: '10mb'
 }));
 
