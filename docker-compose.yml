@@ -1,8 +1,6 @@
-version: "3.9"
-
 services:
   customer-api:
-    image: node:20
+    image: node:20-alpine
     working_dir: /app
     container_name: customer-api
     volumes:
@@ -18,30 +16,43 @@ services:
       - "9464:9464"
 
   observability-api:
-    image: node:20
+    image: node:20-alpine
     working_dir: /app
+    depends_on:
+      observability-pg:
+        condition: service_healthy
     volumes:
       - ./observability-api:/app
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install && npm run migrate:up && npm run dev"
+    environment:
+      DATABASE_URL: postgres://root:root@observability-pg:5432/observability
+      POSTGRES_URL: postgres://root:root@observability-pg:5432/observability
+      PGHOST: observability-pg
+      PGPORT: 5432
+      PGUSER: root
+      PGPASSWORD: root
+      PG_DATABASE: observability
+      API_KEY_ENCRYPTION_KEY: ebcef99b0275a9316322c36c9518ede0a56ed5b630090ed76716e7a63f297809
+      API_KEY_PEPPER: afe4550452606ca9571b65a2ff26f10ee1b15293c74d93c0d9c8646303c43e8c
     ports:
       - "4007:4007"
 
-  observability-web:
-    build:
-      context: ./observability-web
-      dockerfile: Dockerfile.dev
-    container_name: observability-web
-    env_file:
-      - ./observability-web/.env
-    ports:
-      - "5173:5173"
-    restart: unless-stopped
-    volumes:
-      - ./observability-web:/app
-      - /app/node_modules   
+  # observability-web:
+  #   build:
+  #     context: ./observability-web
+  #     dockerfile: Dockerfile.dev
+  #   container_name: observability-web
+  #   env_file:
+  #     - ./observability-web/.env
+  #   ports:
+  #     - "5173:5173"
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./observability-web:/app
+  #     - /app/node_modules   
 
   ingest-engine:
-    image: node:20
+    image: node:20-alpine
     working_dir: /app
     container_name: ingest-engine
     volumes:
@@ -97,6 +108,25 @@ services:
       - ./mimir.yaml:/etc/mimir/mimir.yaml:ro
       - mimir-data:/data
 
+  observability-pg:
+    image: postgres:16
+    container_name: observability-pg
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: observability
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d observability"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - observability_pg_data:/var/lib/postgresql/data
+
 volumes:
   minio-data:
   mimir-data:
+  observability_pg_data:

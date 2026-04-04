@@ -29,7 +29,7 @@ function fmtInt(n: number | null) {
 function fmtRps(n: number | null) {
   if (n === null || !Number.isFinite(n)) return "—";
   // match mockup: one decimal
-  return n.toFixed(1);
+  return n.toFixed(0);
 }
 
 export function TopEndpointsByLatencyTable(props: TopEndpointsByLatencyTableProps) {
@@ -46,7 +46,7 @@ export function TopEndpointsByLatencyTable(props: TopEndpointsByLatencyTableProp
         flexDirection: "column",
       }}
     >
-
+ 
       <Box sx={{ px: 2.25, pt: 1.25, flex: 1, overflow: "hidden" }}>
         <Table
           size="sm"
@@ -87,7 +87,7 @@ export function TopEndpointsByLatencyTable(props: TopEndpointsByLatencyTableProp
               <th style={{ textAlign: "left", width: "55%" }}>Endpoint</th>
               <th style={{ textAlign: "right", width: "15%" }}>p95 (ms)</th>
               <th style={{ textAlign: "right", width: "15%" }}>p50 (ms)</th>
-              <th style={{ textAlign: "right", width: "15%" }}>RPS</th>
+              <th style={{ textAlign: "right", width: "15%" }}>Requests</th>
             </tr>
           </thead>
 

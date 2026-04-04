@@ -4,6 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "migrate": "node-pg-migrate",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "seed-data": "ts-node scripts/seed-data.ts",
     "dev": "ts-node-dev src/index.ts"
   },
   "keywords": [],
@@ -13,11 +17,17 @@
   "dependencies": {
     "axios": "^1.13.2",
     "cors": "^2.8.5",
-    "express": "^5.2.1"
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "typebox": "^1.1.14"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/pg": "^8.20.0",
+    "node-pg-migrate": "^8.0.4",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0"
   }
 }

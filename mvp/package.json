@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "migrate": "node-pg-migrate",
     "dev": "ts-node-dev src/index.ts",
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
@@ -19,11 +20,14 @@
     "axios-retry": "^4.5.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/pg": "^8.20.0",
+    "node-pg-migrate": "^8.0.4",
     "rimraf": "^6.1.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
